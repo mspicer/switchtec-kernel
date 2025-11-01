@@ -25,6 +25,7 @@ MODULE_DESCRIPTION("Microsemi Switchtec(tm) NTB Driver");
 MODULE_VERSION(VERSION);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Microsemi Corporation");
+MODULE_SOFTDEP("pre: ntb");
 
 static ulong max_mw_size = SZ_2M;
 module_param(max_mw_size, ulong, 0644);
