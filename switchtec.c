@@ -1241,6 +1241,36 @@ static long switchtec_dev_ioctl(struct file *filp, unsigned int cmd,
 	return rc;
 }
 
+static int switchtec_dev_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+	struct switchtec_user *stuser = filp->private_data;
+	struct switchtec_dev *stdev = stuser->stdev;
+	struct pci_dev *pdev = stdev->pdev;
+	unsigned long phys_addr;
+	unsigned long size;
+	int bar = 0;
+
+	phys_addr = pci_resource_start(pdev, bar);
+	size = pci_resource_len(pdev, bar);
+
+	/* Check if requested size fits within BAR */
+	if (vma->vm_end - vma->vm_start > size)
+		return -EINVAL;
+
+	/* Check if offset is valid */
+	if (vma->vm_pgoff > size >> PAGE_SHIFT)
+		return -EINVAL;
+
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	vma->vm_flags |= VM_IO | VM_DONTEXPAND | VM_DONTDUMP;
+
+	return io_remap_pfn_range(vma,
+				  vma->vm_start,
+				  (phys_addr >> PAGE_SHIFT) + vma->vm_pgoff,
+				  vma->vm_end - vma->vm_start,
+				  vma->vm_page_prot);
+}
+
 static const struct file_operations switchtec_fops = {
 	.owner = THIS_MODULE,
 	.open = switchtec_dev_open,
@@ -1250,6 +1280,7 @@ static const struct file_operations switchtec_fops = {
 	.poll = switchtec_dev_poll,
 	.unlocked_ioctl = switchtec_dev_ioctl,
 	.compat_ioctl = compat_ptr_ioctl,
+	.mmap = switchtec_dev_mmap,
 };
 
 static void link_event_work(struct work_struct *work)
