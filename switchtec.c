@@ -1262,7 +1262,7 @@ static int switchtec_dev_mmap(struct file *filp, struct vm_area_struct *vma)
 		return -EINVAL;
 
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-	vma->vm_flags |= VM_IO | VM_DONTEXPAND | VM_DONTDUMP;
+	vm_flags_set(vma, VM_IO | VM_DONTEXPAND | VM_DONTDUMP);
 
 	return io_remap_pfn_range(vma,
 				  vma->vm_start,
